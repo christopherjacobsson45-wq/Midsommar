@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Jeopardy Finale</title>
+
+<style>
+body{
+margin:0;
+background:radial-gradient(circle at top,#0f2027,#203a43,#000);
+color:#fff;
+font-family:Arial;
+text-align:center;
+}
+
+/* SCOREBOARD */
+#scoreboard{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+background:#000;
+display:flex;
+justify-content:space-around;
+padding:15px;
+z-index:999;
+border-bottom:2px solid #ffd700;
+}
+
+.team{
+font-size:18px;
+}
+
+.team span{
+display:block;
+font-size:26px;
+font-weight:bold;
+color:#ffd700;
+}
+
+/* BOARD */
+#board{
+display:grid;
+grid-template-columns:repeat(5,1fr);
+gap:12px;
+padding:120px 20px;
+}
+
+.cell{
+background:#1c3550;
+color:#ffd700;
+padding:30px;
+border-radius:14px;
+cursor:pointer;
+font-size:24px;
+transition:0.2s;
+}
+
+.cell:hover{
+transform:scale(1.05);
+background:#254a6b;
+}
+
+.header{
+background:#0072ff;
+padding:20px;
+border-radius:14px;
+font-weight:bold;
+}
+
+/* MODAL */
+#questionView{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.95);
+display:none;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+}
+
+#qText{
+font-size:32px;
+max-width:900px;
+margin:20px;
+}
+
+#timer{
+font-size:70px;
+color:#ffd700;
+margin:20px;
+}
+
+button{
+padding:14px 22px;
+margin:8px;
+border:none;
+border-radius:12px;
+font-size:16px;
+cursor:pointer;
+font-weight:bold;
+background:linear-gradient(135deg,#ff7e5f,#feb47b);
+color:white;
+}
+
+.correct{background:#00c853;}
+.wrong{background:#d50000;}
+
+#teams button{
+background:#2a5298;
+}
+</style>
+</head>
+
+<body>
+
+<div id="scoreboard"></div>
+<div id="board"></div>
+
+<div id="questionView">
+<div id="qText"></div>
+<div id="timer"></div>
+<div id="teams"></div>
+
+<input id="betInput" type="number" placeholder="Satsa poäng" style="display:none;">
+<button id="confirmBet" style="display:none;">Bekräfta satsning</button>
+
+<button onclick="showAnswer()">Visa svar</button>
+<button class="correct" onclick="correct()">RÄTT</button>
+<button class="wrong" onclick="wrong()">FEL</button>
+<button onclick="closeQ()">Stäng</button>
+</div>
+
+<audio id="song1" src="låt1.mp3"></audio>
+<audio id="song2" src="låt2.mp3"></audio>
+<audio id="song3" src="låt3.mp3"></audio>
+<audio id="song4" src="låt4.mp3"></audio>
+<audio id="song5" src="låt5.mp3"></audio>
+
+<script>
+
+/* HÄMTA TOTALPOÄNG */
+let saved = JSON.parse(localStorage.getItem("totalScores")) || [0,0,0];
+
+let teams=[
+{name:"Lag 1",points:saved[0]},
+{name:"Lag 2",points:saved[1]},
+{name:"Lag 3",points:saved[2]}
+];
+
+function renderScoreboard(){
+let s=document.getElementById("scoreboard");
+s.innerHTML="";
+
+teams.forEach(t=>{
+let d=document.createElement("div");
+d.className="team";
+d.innerHTML=t.name+"<span>"+t.points+" p</span>";
+s.appendChild(d);
+});
+}
+
+function updateStorage(){
+let arr=teams.map(t=>t.points);
+localStorage.setItem("totalScores", JSON.stringify(arr));
+}
+
+/* ORIGINAL DATA */
+let categories=["Svengelska","5e klass","Idiotfrågan","Mansgris","8 mars"];
+
+const questions={
+
+"0-1":{q:"Låt1",a:"SVARET",audio:"song1"},
+"0-2":{q:"låt2",a:"SVARET",audio:"song2"},
+"0-3":{q:"låt3",a:"SVARET",audio:"song3"},
+"0-4":{bonus:true,q:"låt 4",a:"SVARET",audio:"song4"},
+"0-5":{q:"låt5",a:"SVARET",audio:"song5"},
+
+"1-1":{q:"1. 1+2+3+4+5=",a:"15"},
+"1-2":{q:"2. Få, färre, ……",a:"Färst"},
+"1-3":{q:"3. Vad heter huvudstaden i Australien",a:"Canberra"},
+"1-4":{q:"4. Vad står den kemiska beteckningen Co2 för?",a:"Koldioxid"},
+"1-5":{bonus:true,q:"Vem var Sveriges första folkvalda konung",a:"Gustav Vasa"},
+
+"2-1":{q:"1. Föräldra-skap eller föräldrar-skap?",a:"föräldra-skap"},
+"2-2":{q:"2. Börjar man tideräkna vid jesu dö eller jesu födelse?",a:"Jesus födelse"},
+"2-3":{q:"3. Är det en mittenskåra på Iprentabletten?",a:"nej"},
+"2-4":{q:"4. Vilket håll går gubben på tändsticksasken?",a:"vänster"},
+"2-5":{q:"5. Hur många färger finns det i den klassiska påsen Ahlgrens bilar?",a:"3"},
+
+"3-1":{q:"1. Vilken sport tävlade Michael Schumacher i?",a:"Formel 1"},
+"3-2":{q:"2. Vilket är det korrekta namnet på bilden?",a:"Bild på en fogsvans"},
+"3-3":{q:"3. Vilket namn var Pamela Andersons karaktär i Baywatch?",a:"HÄR LÄGGER DU IN SVARET"},
+"3-4":{q:"4. Vad heter den kände svenska fotografen som bland annat tog bilder till Slitz, Cafe och Moore?",a:"Bingo Rimer"},
+"3-5":{q:"5. Vilken del i bilen är det som omvandlar bränsle till rörelseenergi och driver bilen framåt?",a:"Förbränningsmotor"},
+
+"4-1":{q:"1. Vad firar man detta datum?",a:"internationella kvinnodagen"},
+"4-2":{q:"2. Hur ofta sker ägglossning hos en kvinna?",a:"cirka en gång per månad"},
+"4-3":{q:"3. Vad heter ”verktyget” som curlar ögonfransarna?",a:"ögonfransböjare"},
+"4-4":{q:"FRÅGAN",a:"SVARET"},
+"4-5":{q:"FRÅGAN",a:"SVARET"}
+
+};
+
+let currentKey,activeTeam,bet=0,time,int;
+
+/* BUILD */
+function build(){
+let b=document.getElementById("board");
+
+categories.forEach(c=>{
+let d=document.createElement("div");
+d.className="header";
+d.innerText=c;
+b.appendChild(d);
+});
+
+for(let r=1;r<=5;r++){
+categories.forEach((c,i)=>{
+let key=i+"-"+r;
+let d=document.createElement("div");
+d.className="cell";
+d.innerText=r;
+d.onclick=()=>openQ(key);
+b.appendChild(d);
+});
+}
+}
+
+/* OPEN */
+function openQ(key){
+currentKey=key;
+let data=questions[key];
+
+document.getElementById("questionView").style.display="flex";
+
+if(data.bonus){
+document.getElementById("qText").innerHTML="Bonusfråga – satsa poäng!";
+setupBet();
+return;
+}
+
+document.getElementById("qText").innerHTML=data.q;
+
+if(key.startsWith("0-")){
+if(data.audio) document.getElementById(data.audio).play();
+document.getElementById("timer").innerHTML="";
+}else{
+startTimer(5);
+}
+
+renderTeams();
+}
+
+/* BET */
+function setupBet(){
+renderTeams(true);
+document.getElementById("betInput").style.display="block";
+document.getElementById("confirmBet").style.display="block";
+}
+
+function renderTeams(bonus=false){
+let tDiv=document.getElementById("teams");
+tDiv.innerHTML="";
+
+teams.forEach(t=>{
+let b=document.createElement("button");
+b.innerText=bonus?`${t.name} (${t.points}p)`:t.name;
+
+b.onclick=()=>{
+activeTeam=t;
+document.getElementById("betInput").value=t.points;
+};
+
+tDiv.appendChild(b);
+});
+}
+
+document.getElementById("confirmBet").onclick=function(){
+bet=parseInt(document.getElementById("betInput").value)||0;
+if(!activeTeam || !bet) return;
+
+let data=questions[currentKey];
+
+document.getElementById("qText").innerHTML=data.q;
+document.getElementById("betInput").style.display="none";
+this.style.display="none";
+
+startTimer(10);
+};
+
+/* TIMER */
+function startTimer(t){
+clearInterval(int);
+time=t;
+document.getElementById("timer").innerText=t;
+
+int=setInterval(()=>{
+time--;
+document.getElementById("timer").innerText=time;
+if(time<=0) clearInterval(int);
+},1000);
+}
+
+/* ANSWER */
+function showAnswer(){
+let data=questions[currentKey];
+document.getElementById("qText").innerHTML+="<br><b>"+data.a+"</b>";
+}
+
+function correct(){
+if(!activeTeam) return;
+
+if(questions[currentKey].bonus){
+activeTeam.points+=bet;
+}else{
+activeTeam.points+=1;
+}
+
+updateStorage();
+renderScoreboard();
+closeQ();
+}
+
+function wrong(){
+if(!activeTeam) return;
+
+if(questions[currentKey].bonus){
+activeTeam.points-=bet;
+}
+
+updateStorage();
+renderScoreboard();
+}
+
+/* CLOSE */
+function closeQ(){
+document.getElementById("questionView").style.display="none";
+}
+
+/* INIT */
+renderScoreboard();
+build();
+
+</script>
+
+</body>
+</html>

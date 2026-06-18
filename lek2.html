@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Skrik och panik</title>
+
+<style>
+body{
+background:black;
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;
+}
+
+h1{margin-top:20px;}
+
+.container{
+max-width:800px;
+margin:auto;
+padding:20px;
+}
+
+.rules{
+text-align:left;
+line-height:1.6;
+font-size:18px;
+margin-bottom:20px;
+}
+
+#timer{
+font-size:50px;
+margin:20px;
+}
+
+button{
+padding:10px 15px;
+margin:5px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+
+.teamBox{
+margin-top:20px;
+}
+
+input{
+padding:10px;
+margin:5px;
+width:80px;
+text-align:center;
+font-size:18px;
+}
+
+#backBtn{
+position:fixed;
+top:15px;
+left:15px;
+background:#142c3f;
+color:#ffd700;
+padding:12px 18px;
+border-radius:12px;
+font-size:18px;
+cursor:pointer;
+z-index:9999;
+}
+</style>
+
+</head>
+
+<body>
+
+<button id="backBtn" onclick="goBack()">← Till index</button>
+
+<h1>Skrik och Panik</h1>
+
+<div class="container">
+
+<div class="rules">
+<p><strong>Regler:</strong></p>
+
+<p>Har ni någonsin undrat varför varför man inte kan slicka sig själv på armbågen? Eller varför ens underarm är exakt lika stor som sin fot. Eller varför personer i filmer alltid insisterar att springa rakt fram när ett objekt ramlar mot dom istället för att bara ta ett steg åt sidan. Typ som i Lejonkungen. Jävla Simba som inte kunde springa in till sidan. Fattade han inte att han måste ha väjningsplikt gentemot gnuerna. Det är ett par av livets frågor som vi alla undrat över. Har ni nu orkat läsa så här långt och någon av er under tiden försökt slicka på sin egen armbåge. Så har ni faktiskt fått ett bonuspoäng i sympati för att ni uppenbarligen behöver det. 
+Men nu till reglerna. Ni ska springa så långt ni kan. Men ni får bara ta ett andetag och skrika undertiden. Så fort ni slutar skrika så måste ni stanna. Den enväldige domaren använder VAR (Video assistent referee) i denna gren för att undvika klagomål. (som om det hjälper)
+När skriket är slut så får nästa lagmedlem fortsätta från den platsen. 
+Är man färre än det laget med flest deltagare så får någon köra dubbelt. 
+Det laget som sammanlagt sprungit längst, vinner! 
+.</p>
+
+</div>
+
+<h2 id="timer">10:00</h2>
+
+<button onclick="startTimer()">Starta</button> <button onclick="resetTimer()">Nollställ</button>
+
+<div class="teamBox">
+<h2>Resultat</h2>
+
+<p>Lag 1: <input id="t1" type="number"></p>
+<p>Lag 2: <input id="t2" type="number"></p>
+<p>Lag 3: <input id="t3" type="number"></p>
+
+<button onclick="saveResults()">Spara resultat</button>
+
+</div>
+
+</div>
+
+<script>
+
+const ADMIN_PASSWORD = "1234"; // här
+
+/* 🔧 IDENTITET */
+const LEK_ID = "lek2";
+
+/* ⏱ TIMER */
+let time = 600;
+let interval;
+
+function startTimer(){
+clearInterval(interval);
+
+interval = setInterval(()=>{
+time--;
+
+let min = Math.floor(time/60);
+let sec = time % 60;
+if(sec < 10) sec = "0" + sec;
+
+document.getElementById("timer").innerText = min + ":" + sec;
+
+if(time <= 0){
+clearInterval(interval);
+alert("Tiden är slut!");
+}
+},1000);
+}
+
+function resetTimer(){
+clearInterval(interval);
+time = 600;
+document.getElementById("timer").innerText = "10:00";
+}
+
+/* 💾 SPARA */
+function saveResults(){
+
+let pass = prompt("Ange lösenord:");
+
+if(pass !== ADMIN_PASSWORD){
+alert("Fel lösenord!");
+return;
+}
+
+let t1 = parseInt(document.getElementById("t1").value) || 0;
+let t2 = parseInt(document.getElementById("t2").value) || 0;
+let t3 = parseInt(document.getElementById("t3").value) || 0;
+
+let games = JSON.parse(localStorage.getItem("games")) || {};
+games[LEK_ID] = [t1,t2,t3];
+localStorage.setItem("games", JSON.stringify(games));
+
+unlockNext();
+
+alert("Resultat sparat!");
+window.location.href = "index.html";
+}
+/* 🔓 LÅS UPP */
+function unlockNext(){
+
+let unlocked = JSON.parse(localStorage.getItem("unlocked")) || [];
+
+let current = parseInt(LEK_ID.replace("lek",""));
+let next = "lek"+(current+1);
+
+if(!unlocked.includes(next)){
+unlocked.push(next);
+}
+
+localStorage.setItem("unlocked", JSON.stringify(unlocked));
+}
+
+/* 🔙 */
+function goBack(){
+window.location.href = "index.html";
+}
+
+</script>
+
+</body>
+</html>
