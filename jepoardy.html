@@ -17,7 +17,6 @@ text-align:center;
 #scoreboard{
 position:fixed;
 top:0;
-left:0;
 width:100%;
 display:flex;
 justify-content:space-around;
@@ -30,7 +29,6 @@ z-index:999;
 .team span{
 display:block;
 font-size:24px;
-font-weight:600;
 color:#ffd700;
 }
 
@@ -46,7 +44,6 @@ padding:120px 20px;
 background:linear-gradient(135deg,#0072ff,#00c6ff);
 padding:15px;
 border-radius:12px;
-font-weight:600;
 }
 
 .cell{
@@ -60,14 +57,12 @@ transition:0.2s;
 
 .cell:hover{
 transform:scale(1.05);
-background:rgba(255,255,255,0.15);
 }
 
 /* MODAL */
 #questionView{
 position:fixed;
 top:0;
-left:0;
 width:100%;
 height:100%;
 background:rgba(0,0,0,0.95);
@@ -77,40 +72,22 @@ justify-content:center;
 align-items:center;
 }
 
-#qText{
-font-size:28px;
-max-width:800px;
-margin:20px;
-}
+#qText{font-size:28px;margin:20px;}
+#timer{font-size:60px;color:#ffd700;}
 
-#timer{
-font-size:60px;
-color:#ffd700;
-}
-
-/* BUTTONS */
 button{
 border:none;
 border-radius:10px;
 padding:12px 20px;
 margin:6px;
-font-size:15px;
 cursor:pointer;
 background:linear-gradient(135deg,#ff7e5f,#feb47b);
 color:white;
-transition:0.2s;
-}
-
-button:hover{
-transform:scale(1.05);
 }
 
 .correct{background:linear-gradient(135deg,#00c853,#43e97b);}
 .wrong{background:linear-gradient(135deg,#d50000,#ff6a6a);}
-
-#teams button{
-background:linear-gradient(135deg,#2a5298,#1e3c72);
-}
+#teams button{background:#2a5298;}
 </style>
 </head>
 
@@ -124,7 +101,7 @@ background:linear-gradient(135deg,#2a5298,#1e3c72);
 <div id="timer"></div>
 <div id="teams"></div>
 
-<input id="betInput" type="number" placeholder="Satsa poäng" style="display:none;">
+<input id="betInput" type="number" style="display:none;">
 <button id="confirmBet" style="display:none;">Bekräfta</button>
 
 <button onclick="toggleAudio()">Play / Pause</button>
@@ -144,6 +121,7 @@ background:linear-gradient(135deg,#2a5298,#1e3c72);
 
 let currentAudio=null;
 let currentCell=null;
+let currentKey,activeTeam,bet=0,time,int;
 
 /* POÄNG */
 let data=JSON.parse(localStorage.getItem("games"))||{};
@@ -166,6 +144,7 @@ let s=document.getElementById("scoreboard");
 s.innerHTML="";
 teams.forEach(t=>{
 let d=document.createElement("div");
+d.className="team";
 d.innerHTML=`${t.name}<span>${t.points} p</span>`;
 s.appendChild(d);
 });
@@ -174,6 +153,44 @@ s.appendChild(d);
 function updateStorage(){
 localStorage.setItem("totalScores", JSON.stringify(teams.map(t=>t.points)));
 }
+
+/* LAGVAL */
+function renderTeams(bonus=false){
+let tDiv=document.getElementById("teams");
+tDiv.innerHTML="";
+
+teams.forEach(t=>{
+let b=document.createElement("button");
+b.innerText=bonus?`${t.name} (${t.points}p)`:t.name;
+
+b.onclick=()=>{
+activeTeam=t;
+if(bonus) document.getElementById("betInput").value=t.points;
+};
+
+tDiv.appendChild(b);
+});
+}
+
+/* BONUS */
+function setupBet(){
+renderTeams(true);
+betInput.style.display="block";
+confirmBet.style.display="block";
+}
+
+confirmBet.onclick=function(){
+bet=parseInt(betInput.value)||0;
+if(!activeTeam||!bet) return;
+
+let data=questions[currentKey];
+qText.innerHTML=data.q;
+
+betInput.style.display="none";
+confirmBet.style.display="none";
+
+startTimer(10);
+};
 
 /* DATA */
 let categories=["Svengelska","5e klass","Idiotfrågan","Mansgris","8 mars"];
@@ -201,18 +218,15 @@ const questions={
 "3-1":{q:"1. Vilken sport tävlade Michael Schumacher i?",a:"Formel 1"},
 "3-2":{q:"2. Vilket är det korrekta namnet på bilden?",a:"Bild på en fogsvans"},
 "3-3":{q:"3. Vilket namn var Pamela Andersons karaktär i Baywatch?",a:"HÄR LÄGGER DU IN SVARET"},
-"3-4":{q:"4. Vad heter den kände svenska fotografen som bland annat tog bilder till Slitz, Cafe och Moore?",a:"Bingo Rimer"},
-"3-5":{q:"5. Vilken del i bilen är det som omvandlar bränsle till rörelseenergi och driver bilen framåt?",a:"Förbränningsmotor"},
+"3-4":{q:"4. Vad heter den kände svenska fotografen?",a:"Bingo Rimer"},
+"3-5":{q:"5. Vilken del i bilen driver bilen framåt?",a:"Förbränningsmotor"},
 
 "4-1":{q:"1. Vad firar man detta datum?",a:"internationella kvinnodagen"},
-"4-2":{q:"2. Hur ofta sker ägglossning hos en kvinna?",a:"cirka en gång per månad"},
-"4-3":{q:"3. Vad heter ”verktyget” som curlar ögonfransarna?",a:"ögonfransböjare"},
+"4-2":{q:"2. Hur ofta sker ägglossning?",a:"cirka en gång per månad"},
+"4-3":{q:"3. Vad heter verktyget som curlar ögonfransar?",a:"ögonfransböjare"},
 "4-4":{q:"FRÅGAN",a:"SVARET"},
 "4-5":{q:"FRÅGAN",a:"SVARET"}
-
 };
-
-let currentKey,activeTeam,bet=0,time,int;
 
 /* BUILD */
 function build(){
@@ -246,37 +260,37 @@ currentCell=cell;
 currentKey=key;
 let data=questions[key];
 
-document.getElementById("questionView").style.display="flex";
+questionView.style.display="flex";
 
-/* STOP AUDIO */
+/* AUDIO */
 if(currentAudio){
 currentAudio.pause();
 currentAudio.currentTime=0;
 }
 
-/* PLAY AUDIO */
 if(key.startsWith("0-") && data.audio){
 let audio=document.getElementById(data.audio);
 if(audio){
 currentAudio=audio;
-currentAudio.play();
+audio.play();
 }
-document.getElementById("timer").innerHTML="";
+timer.innerHTML="";
 }else{
 startTimer(5);
 }
 
+/* BONUS */
 if(data.bonus){
-document.getElementById("qText").innerHTML="Bonusfråga – satsa poäng!";
+qText.innerHTML="Bonusfråga – satsa poäng!";
 setupBet();
 return;
 }
 
-document.getElementById("qText").innerHTML=data.q;
+qText.innerHTML=data.q;
 renderTeams();
 }
 
-/* AUDIO */
+/* AUDIO CONTROL */
 function toggleAudio(){
 if(!currentAudio) return;
 currentAudio.paused?currentAudio.play():currentAudio.pause();
@@ -286,25 +300,24 @@ currentAudio.paused?currentAudio.play():currentAudio.pause();
 function startTimer(t){
 clearInterval(int);
 time=t;
-document.getElementById("timer").innerText=t;
+timer.innerText=t;
 
 int=setInterval(()=>{
 time--;
-document.getElementById("timer").innerText=time;
+timer.innerText=time;
 if(time<=0) clearInterval(int);
 },1000);
 }
 
 /* ANSWER */
 function showAnswer(){
-let data=questions[currentKey];
-document.getElementById("qText").innerHTML+="<br><b>"+data.a+"</b>";
+qText.innerHTML+="<br><b>"+questions[currentKey].a+"</b>";
 }
 
 function correct(){
 if(!activeTeam) return;
 
-questions[currentKey].bonus ? activeTeam.points+=bet : activeTeam.points+=1;
+questions[currentKey].bonus?activeTeam.points+=bet:activeTeam.points+=1;
 
 updateStorage();
 renderScoreboard();
@@ -313,16 +326,14 @@ closeQ();
 
 function wrong(){
 if(!activeTeam) return;
-
 if(questions[currentKey].bonus) activeTeam.points-=bet;
-
 updateStorage();
 renderScoreboard();
 }
 
 /* CLOSE */
 function closeQ(){
-document.getElementById("questionView").style.display="none";
+questionView.style.display="none";
 
 if(currentAudio){
 currentAudio.pause();
@@ -333,8 +344,13 @@ if(currentCell){
 currentCell.classList.add("used");
 currentCell.innerText="";
 currentCell.style.background="#000";
-currentCell.style.cursor="default";
 }
+
+activeTeam=null;
+bet=0;
+teams.innerHTML="";
+betInput.style.display="none";
+confirmBet.style.display="none";
 }
 
 /* INIT */
