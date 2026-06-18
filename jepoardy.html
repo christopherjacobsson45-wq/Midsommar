@@ -143,7 +143,14 @@ background:#2a5298;
 <script>
 
 /* HÄMTA TOTALPOÄNG */
-let saved = JSON.parse(localStorage.getItem("totalScores")) || [0,0,0];
+let data = JSON.parse(localStorage.getItem("games")) || {};
+let saved = [0,0,0];
+
+Object.values(data).forEach(g=>{
+  saved[0]+=g[0];
+  saved[1]+=g[1];
+  saved[2]+=g[2];
+});
 
 let teams=[
 {name:"Lag 1",points:saved[0]},
