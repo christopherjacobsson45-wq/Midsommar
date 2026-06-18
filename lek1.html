@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -53,6 +52,34 @@ border-radius:8px;
 cursor:pointer;
 }
 
+/* 🔹 BILD */
+#preview{
+width:200px;
+cursor:pointer;
+border-radius:10px;
+margin:15px 0;
+}
+
+/* 🔹 FULLSCREEN */
+#imageOverlay{
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.9);
+justify-content:center;
+align-items:center;
+z-index:9999;
+}
+
+#imageOverlay img{
+max-width:90%;
+max-height:90%;
+border-radius:10px;
+}
+
 input{
 padding:10px;
 margin:5px;
@@ -74,17 +101,22 @@ font-size:18px;
 
 <div class="rules">
 <p><strong>Regler:</strong></p>
-<p>Med tanke på hur väl det gick förra året med midsommarstången så kopierar vi inte det rakt av eftersom vi gillar kaos och hysteri. Sen är det sedan gammalt att nytt är alltid bättre. 
-I er påse som ni får direkt efter att detta är uppläst och då börjar tiden. Instruktionerna är enkla. Välj den fulaste av er och täck denne i toalettpapper så resten av oss slipper se hen (Gäller hen även om man identifierar sig som en lyktstolpe?)
-Men…. Hen måste försöka se ut som en midsommarstång. 
-Midsommarstången kommer sedan att fotograferas och låtas avgöras av världens mest använda domare. 
-Ni har 20minuter på er från och med nu!
-.</p>
+<p>
+Med tanke på hur väl det gick förra året med midsommarstången så kopierar vi inte det rakt av eftersom vi gillar kaos och hysteri. 
+I er påse som ni får direkt efter att detta är uppläst och då börjar tiden. Instruktionerna är enkla. 
+Välj den fulaste av er och täck denne i toalettpapper så resten av oss slipper se hen. 
+Hen måste försöka se ut som en midsommarstång. 
+Ni har 20 minuter på er!
+</p>
 </div>
+
+<!-- 🔹 KLICKBAR BILD -->
+<img src="bilder/Midsommarstang.jpg" id="preview" onclick="openImage()">
 
 <h2 id="timer">20:00</h2>
 
-<button onclick="startTimer()">Starta</button> <button onclick="resetTimer()">Nollställ</button>
+<button onclick="startTimer()">Starta</button>
+<button onclick="resetTimer()">Nollställ</button>
 
 <h2>Resultat</h2>
 
@@ -96,14 +128,17 @@ Ni har 20minuter på er från och med nu!
 
 </div>
 
+<!-- 🔹 FULLSCREEN BILD -->
+<div id="imageOverlay" onclick="closeImage()">
+<img src="bilder/Midsommarstang.jpg">
+</div>
+
 <script>
 
-const ADMIN_PASSWORD = "1234"; // ändra själv
-
-/* 🔧 IDENTITET */
+const ADMIN_PASSWORD = "1234";
 const LEK_ID = "lek1";
 
-/* ⏱ TIMER (20 min) */
+/* TIMER */
 let time = 1200;
 let interval;
 
@@ -133,7 +168,16 @@ time = 1200;
 document.getElementById("timer").innerText = "20:00";
 }
 
-/* 💾 SPARA */
+/* BILD */
+function openImage(){
+document.getElementById("imageOverlay").style.display = "flex";
+}
+
+function closeImage(){
+document.getElementById("imageOverlay").style.display = "none";
+}
+
+/* SPARA */
 function saveResults(){
 
 let pass = prompt("Ange lösenord:");
@@ -157,7 +201,7 @@ alert("Resultat sparat!");
 window.location.href = "index.html";
 }
 
-/* 🔓 LÅS UPP */
+/* LÅS UPP */
 function unlockNext(){
 
 let unlocked = JSON.parse(localStorage.getItem("unlocked")) || [];
@@ -172,7 +216,7 @@ unlocked.push(next);
 localStorage.setItem("unlocked", JSON.stringify(unlocked));
 }
 
-/* 🔙 */
+/* TILLBAKA */
 function goBack(){
 window.location.href = "index.html";
 }
