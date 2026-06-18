@@ -7,9 +7,9 @@
 <style>
 body{
 margin:0;
-background:radial-gradient(circle at top,#0f2027,#203a43,#000);
-color:#fff;
-font-family:Arial;
+font-family:Segoe UI, Arial;
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+color:white;
 text-align:center;
 }
 
@@ -19,22 +19,19 @@ position:fixed;
 top:0;
 left:0;
 width:100%;
-background:#000;
 display:flex;
 justify-content:space-around;
 padding:15px;
+background:rgba(0,0,0,0.6);
+backdrop-filter:blur(10px);
+border-bottom:1px solid rgba(255,255,255,0.1);
 z-index:999;
-border-bottom:2px solid #ffd700;
-}
-
-.team{
-font-size:18px;
 }
 
 .team span{
 display:block;
-font-size:26px;
-font-weight:bold;
+font-size:24px;
+font-weight:600;
 color:#ffd700;
 }
 
@@ -46,26 +43,26 @@ gap:12px;
 padding:120px 20px;
 }
 
+.header{
+background:linear-gradient(135deg,#0072ff,#00c6ff);
+padding:15px;
+border-radius:12px;
+font-weight:600;
+}
+
 .cell{
-background:#1c3550;
-color:#ffd700;
+background:rgba(255,255,255,0.08);
+border-radius:12px;
 padding:30px;
-border-radius:14px;
+font-size:22px;
 cursor:pointer;
-font-size:24px;
 transition:0.2s;
+backdrop-filter:blur(6px);
 }
 
 .cell:hover{
 transform:scale(1.05);
-background:#254a6b;
-}
-
-.header{
-background:#0072ff;
-padding:20px;
-border-radius:14px;
-font-weight:bold;
+background:rgba(255,255,255,0.15);
 }
 
 /* MODAL */
@@ -77,40 +74,45 @@ width:100%;
 height:100%;
 background:rgba(0,0,0,0.95);
 display:none;
+flex-direction:column;
 justify-content:center;
 align-items:center;
-flex-direction:column;
+padding:20px;
 }
 
 #qText{
-font-size:32px;
-max-width:900px;
+font-size:28px;
+max-width:800px;
 margin:20px;
 }
 
 #timer{
-font-size:70px;
+font-size:60px;
 color:#ffd700;
-margin:20px;
 }
 
+/* BUTTONS */
 button{
-padding:14px 22px;
-margin:8px;
 border:none;
-border-radius:12px;
-font-size:16px;
+border-radius:10px;
+padding:12px 20px;
+margin:6px;
+font-size:15px;
 cursor:pointer;
-font-weight:bold;
 background:linear-gradient(135deg,#ff7e5f,#feb47b);
 color:white;
+transition:0.2s;
 }
 
-.correct{background:#00c853;}
-.wrong{background:#d50000;}
+button:hover{
+transform:scale(1.05);
+}
+
+.correct{background:linear-gradient(135deg,#00c853,#43e97b);}
+.wrong{background:linear-gradient(135deg,#d50000,#ff6a6a);}
 
 #teams button{
-background:#2a5298;
+background:linear-gradient(135deg,#2a5298,#1e3c72);
 }
 </style>
 </head>
@@ -126,10 +128,9 @@ background:#2a5298;
 <div id="teams"></div>
 
 <input id="betInput" type="number" placeholder="Satsa poäng" style="display:none;">
-<button id="confirmBet" style="display:none;">Bekräfta satsning</button>
+<button id="confirmBet" style="display:none;">Bekräfta</button>
 
 <button onclick="toggleAudio()">Play / Pause</button>
-
 <button onclick="showAnswer()">Visa svar</button>
 <button class="correct" onclick="correct()">RÄTT</button>
 <button class="wrong" onclick="wrong()">FEL</button>
@@ -144,12 +145,12 @@ background:#2a5298;
 
 <script>
 
-/* 🔊 AUDIO CONTROL */
-let currentAudio = null;
+let currentAudio=null;
+let currentCell=null;
 
-/* HÄMTA TOTALPOÄNG */
-let data = JSON.parse(localStorage.getItem("games")) || {};
-let saved = [0,0,0];
+/* HÄMTA POÄNG */
+let data=JSON.parse(localStorage.getItem("games"))||{};
+let saved=[0,0,0];
 
 Object.values(data).forEach(g=>{
 saved[0]+=g[0];
@@ -168,26 +169,24 @@ let s=document.getElementById("scoreboard");
 s.innerHTML="";
 teams.forEach(t=>{
 let d=document.createElement("div");
-d.className="team";
-d.innerHTML=t.name+"<span>"+t.points+" p</span>";
+d.innerHTML=`${t.name}<span>${t.points} p</span>`;
 s.appendChild(d);
 });
 }
 
 function updateStorage(){
-let arr=teams.map(t=>t.points);
-localStorage.setItem("totalScores", JSON.stringify(arr));
+localStorage.setItem("totalScores", JSON.stringify(teams.map(t=>t.points)));
 }
 
 /* DATA */
 let categories=["Svengelska","5e klass","Idiotfrågan","Mansgris","8 mars"];
 
 const questions={
-"0-1":{q:"Låt1",a:"SVARET",audio:"song1"},
-"0-2":{q:"låt2",a:"SVARET",audio:"song2"},
-"0-3":{q:"låt3",a:"SVARET",audio:"song3"},
-"0-4":{bonus:true,q:"låt 4",a:"SVARET",audio:"song4"},
-"0-5":{q:"låt5",a:"SVARET",audio:"song5"}
+"0-1":{q:"Låt 1",a:"Gyllene Tider - Sommartider",audio:"song1"},
+"0-2":{q:"Låt 2",a:"Richard Marx - Right here waiting for you",audio:"song2"},
+"0-3":{q:"Låt 3",a:"Gyllene Tider - Kung av sand",audio:"song3"},
+"0-4":{bonus:true,q:"Låt 4",a:"Whitney Houston - Always love you",audio:"song4"},
+"0-5":{q:"Låt 5",a:"Passenger - Let her go",audio:"song5"}
 };
 
 let currentKey,activeTeam,bet=0,time,int;
@@ -209,28 +208,41 @@ let key=i+"-"+r;
 let d=document.createElement("div");
 d.className="cell";
 d.innerText=r;
-d.onclick=()=>openQ(key);
+
+d.onclick=()=>openQ(key,d);
+
 b.appendChild(d);
 });
 }
 }
 
 /* OPEN */
-function openQ(key){
+function openQ(key,cell){
+
+if(cell.classList.contains("used")) return;
+
+currentCell=cell;
 currentKey=key;
 let data=questions[key];
 
 document.getElementById("questionView").style.display="flex";
 
-/* STOPPA GAMMALT LJUD */
+/* STOP AUDIO */
 if(currentAudio){
 currentAudio.pause();
 currentAudio.currentTime=0;
 }
 
-if(data.audio){
-currentAudio=document.getElementById(data.audio);
+/* PLAY AUDIO */
+if(key.startsWith("0-") && data.audio){
+let audio=document.getElementById(data.audio);
+if(audio){
+currentAudio=audio;
 currentAudio.play();
+}
+document.getElementById("timer").innerHTML="";
+}else{
+startTimer(5);
 }
 
 if(data.bonus){
@@ -240,25 +252,13 @@ return;
 }
 
 document.getElementById("qText").innerHTML=data.q;
-
-if(key.startsWith("0-")){
-document.getElementById("timer").innerHTML="";
-}else{
-startTimer(5);
-}
-
 renderTeams();
 }
 
-/* AUDIO TOGGLE */
+/* AUDIO */
 function toggleAudio(){
 if(!currentAudio) return;
-
-if(currentAudio.paused){
-currentAudio.play();
-}else{
-currentAudio.pause();
-}
+currentAudio.paused?currentAudio.play():currentAudio.pause();
 }
 
 /* TIMER */
@@ -283,11 +283,7 @@ document.getElementById("qText").innerHTML+="<br><b>"+data.a+"</b>";
 function correct(){
 if(!activeTeam) return;
 
-if(questions[currentKey].bonus){
-activeTeam.points+=bet;
-}else{
-activeTeam.points+=1;
-}
+questions[currentKey].bonus ? activeTeam.points+=bet : activeTeam.points+=1;
 
 updateStorage();
 renderScoreboard();
@@ -297,9 +293,7 @@ closeQ();
 function wrong(){
 if(!activeTeam) return;
 
-if(questions[currentKey].bonus){
-activeTeam.points-=bet;
-}
+if(questions[currentKey].bonus) activeTeam.points-=bet;
 
 updateStorage();
 renderScoreboard();
@@ -312,6 +306,13 @@ document.getElementById("questionView").style.display="none";
 if(currentAudio){
 currentAudio.pause();
 currentAudio.currentTime=0;
+}
+
+if(currentCell){
+currentCell.classList.add("used");
+currentCell.innerText="";
+currentCell.style.background="#000";
+currentCell.style.cursor="default";
 }
 }
 
