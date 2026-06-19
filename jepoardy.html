@@ -187,9 +187,43 @@ startTimer(10);
 };
 
 /* DATA */
-let categories=["Svengelska","5e klass","Idiotfrågan","Mansgris","8 mars"];
+let categories=["Svengelska","Smartare än en femteklassare","Idiotfrågan","Mansgris","8 mars"];
 
-const questions = { /* DIN ORIGINAL LISTA HÄR */ };
+const questions={
+
+"0-1":{q:"Vilken låt är detta?",a:"Gyllene Tider - Sommartider",audio:"song1"},
+"0-2":{q:"Vilken låt är detta?",a:"Richard Marx - Right here waiting for you",audio:"song2"},
+"0-3":{q:"Vilken låt är detta?",a:"Gyllene Tider - Kung av sand",audio:"song3"},
+"0-4":{bonus:true,q:"Vilken låt är detta?",a:"Whitney Houston - Always love you",audio:"song4"},
+"0-5":{q:"Vilken låt är detta?",a:"Passenger - Let her go",audio:"song5"},
+
+"1-1":{q:"1+2+3+4+5=",a:"15"},
+"1-2":{q:"Få, färre, ……",a:"Färst"},
+"1-3":{q:"Vad heter huvudstaden i Australien",a:"Canberra"},
+"1-4":{q:"Vad står den kemiska beteckningen Co2 för?",a:"Koldioxid"},
+"1-5":{bonus:true,q:"Vem var Sveriges första folkvalda konung",a:"Gustav Vasa"},
+
+"2-1":{q:"Föräldra-skap eller föräldrar-skap?",a:"föräldra-skap"},
+"2-2":{q:"Börjar man tideräkna vid jesu dö eller jesu födelse?",a:"Jesus födelse"},
+"2-3":{q:"Är det en mittenskåra på Iprentabletten?",a:"nej"},
+"2-4":{q:"Vilket håll går gubben på tändsticksasken?",a:"vänster"},
+"2-5":{q:"Hur många färger finns det i den klassiska påsen Ahlgrens bilar?",a:"3"},
+
+"3-1":{q:"Vilken sport tävlade Michael Schumacher i?",a:"Formel 1"},
+"3-2":{q:"Vilket är det korrekta namnet på bilden?",a:"Bild på en fogsvans"},
+"3-3":{q:"Vilket namn var Pamela Andersons karaktär i Baywatch?",a:"(lägg in rätt svar)"},
+"3-4":{q:"Vad heter den kände svenska fotografen?",a:"Bingo Rimer"},
+"3-5":{q:"Vilken del i bilen driver bilen framåt?",a:"Förbränningsmotor"},
+
+"4-1":{q:"Vad firar man detta datum?",a:"internationella kvinnodagen"},
+"4-2":{q:"Hur ofta sker ägglossning?",a:"cirka en gång per månad"},
+"4-3":{q:"Vad är skillnaden på en concealer och en Foundation",a:"Foundation används som bas i hela ansiktet för att jämna ut hudtonen.
+Concealer används punktvis för att täcka specifika områden, som mörka ringar eller finnar, och är oftast mer täckande."}
+"4-4":{q:"Vad heter kronprinsessans barn",a:"Estelle och Oskar"},
+"4-5":{q:"Vad står P-et för i P-piller",a:"Preventin"},
+
+
+};
 
 /* BUILD */
 function build(){
