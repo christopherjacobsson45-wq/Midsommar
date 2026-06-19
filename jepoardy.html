@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
@@ -169,19 +169,19 @@ tDiv.appendChild(b);
 /* BONUS */
 function setupBet(){
 renderTeams(true);
-betInput.style.display="block";
-confirmBet.style.display="block";
+document.getElementById("betInput").style.display="block";
+document.getElementById("confirmBet").style.display="block";
 }
 
-confirmBet.onclick=function(){
-bet=parseInt(betInput.value)||0;
+document.getElementById("confirmBet").onclick=function(){
+bet=parseInt(document.getElementById("betInput").value)||0;
 if(!activeTeam||!bet) return;
 
 let data=questions[currentKey];
 qText.innerHTML=data.q;
 
-betInput.style.display="none";
-confirmBet.style.display="none";
+document.getElementById("betInput").style.display="none";
+document.getElementById("confirmBet").style.display="none";
 
 startTimer(10);
 };
@@ -198,31 +198,28 @@ const questions={
 "0-5":{q:"Vilken låt är detta?",a:"Passenger - Let her go",audio:"song5"},
 
 "1-1":{q:"1+2+3+4+5=",a:"15"},
-"1-2":{q:"Få, färre, ……",a:"Färst"},
+"1-2":{q:"Få, färre, …",a:"Färst"},
 "1-3":{q:"Vad heter huvudstaden i Australien",a:"Canberra"},
-"1-4":{q:"Vad står den kemiska beteckningen Co2 för?",a:"Koldioxid"},
+"1-4":{q:"Vad står den kemiska beteckningen CO2 för?",a:"Koldioxid"},
 "1-5":{bonus:true,q:"Vem var Sveriges första folkvalda konung",a:"Gustav Vasa"},
 
-"2-1":{q:"Föräldra-skap eller föräldrar-skap?",a:"föräldra-skap"},
-"2-2":{q:"Börjar man tideräkna vid jesu dö eller jesu födelse?",a:"Jesus födelse"},
-"2-3":{q:"Är det en mittenskåra på Iprentabletten?",a:"nej"},
-"2-4":{q:"Vilket håll går gubben på tändsticksasken?",a:"vänster"},
+"2-1":{q:"Föräldraskap eller föräldrar-skap?",a:"Föräldraskap"},
+"2-2":{q:"Börjar man tideräkna vid Jesu död eller Jesu födelse?",a:"Jesu födelse"},
+"2-3":{q:"Är det en mittenskåra på Iprens tablett?",a:"Nej"},
+"2-4":{q:"Vilket håll går gubben på tändsticksasken?",a:"Vänster"},
 "2-5":{q:"Hur många färger finns det i den klassiska påsen Ahlgrens bilar?",a:"3"},
 
 "3-1":{q:"Vilken sport tävlade Michael Schumacher i?",a:"Formel 1"},
-"3-2":{q:"Vilket är det korrekta namnet på bilden?",a:"Bild på en fogsvans"},
-"3-3":{q:"Vilket namn var Pamela Andersons karaktär i Baywatch?",a:"(lägg in rätt svar)"},
-"3-4":{q:"Vad heter den kände svenska fotografen?",a:"Bingo Rimer"},
+"3-2":{q:"Vad är detta?<br><img src='fogsvans.png' style='max-width:300px;'>",a:"Fogsvans"},
+"3-3":{q:"Vilket namn var Pamela Andersons karaktär i Baywatch?",a:"C.J. Parker"},
+"3-4":{q:"Vad heter den kände svenska fotografen?",a:"Bingo Rimér"},
 "3-5":{q:"Vilken del i bilen driver bilen framåt?",a:"Förbränningsmotor"},
 
-"4-1":{q:"Vad firar man detta datum?",a:"internationella kvinnodagen"},
-"4-2":{q:"Hur ofta sker ägglossning?",a:"cirka en gång per månad"},
-"4-3":{q:"Vad är skillnaden på en concealer och en Foundation",a:"Foundation används som bas i hela ansiktet för att jämna ut hudtonen.
-Concealer används punktvis för att täcka specifika områden, som mörka ringar eller finnar, och är oftast mer täckande."}
-"4-4":{q:"Vad heter kronprinsessans barn",a:"Estelle och Oskar"},
-"4-5":{q:"Vad står P-et för i P-piller",a:"Preventin"},
-
-
+"4-1":{q:"Vad firar man detta datum?",a:"Internationella kvinnodagen"},
+"4-2":{q:"Hur ofta sker ägglossning?",a:"Cirka en gång per månad"},
+"4-3":{q:"Vad är skillnaden på concealer och foundation?",a:"Foundation används som bas i hela ansiktet för att jämna ut hudtonen. Concealer används punktvis för att täcka specifika områden och är oftast mer täckande."},
+"4-4":{q:"Vad heter kronprinsessans barn?",a:"Estelle och Oskar"},
+"4-5":{q:"Vad står P:et för i P-piller?",a:"Preventiv"}
 };
 
 /* BUILD */
@@ -242,7 +239,7 @@ let key=i+"-"+r;
 let d=document.createElement("div");
 d.className="cell";
 d.innerText=r;
-d.onclick=()=>openQ(key,d,r); /* SKICKAR MED POÄNG */
+d.onclick=()=>openQ(key,d,r);
 b.appendChild(d);
 });
 }
@@ -255,20 +252,16 @@ if(cell.classList.contains("used")) return;
 
 currentCell=cell;
 currentKey=key;
-
-/* SÄTT POÄNG */
 questionPoints = value;
 
 let data=questions[key];
 
 questionView.style.display="flex";
 
-/* TA BORT FRÅGA DIREKT */
 cell.classList.add("used");
 cell.innerText="";
 cell.style.background="#000";
 
-/* AUDIO */
 if(currentAudio){
 currentAudio.pause();
 currentAudio.currentTime=0;
@@ -283,7 +276,6 @@ timer.innerHTML="";
 startTimer(5);
 }
 
-/* BONUS */
 if(data.bonus){
 qText.innerHTML="Bonusfråga – satsa poäng!";
 setupBet();
@@ -355,8 +347,8 @@ currentAudio.currentTime=0;
 activeTeam=null;
 bet=0;
 document.getElementById("teams").innerHTML="";
-betInput.style.display="none";
-confirmBet.style.display="none";
+document.getElementById("betInput").style.display="none";
+document.getElementById("confirmBet").style.display="none";
 }
 
 /* INIT */
