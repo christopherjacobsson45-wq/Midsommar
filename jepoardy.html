@@ -7,13 +7,12 @@
 <style>
 body{
 margin:0;
-font-family:Segoe UI;
+font-family:Segoe UI, Arial;
 background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
 color:white;
 text-align:center;
 }
 
-/* SCORE */
 #scoreboard{
 position:fixed;
 top:0;
@@ -21,39 +20,37 @@ width:100%;
 display:flex;
 justify-content:space-around;
 padding:15px;
-background:rgba(0,0,0,0.7);
+background:rgba(0,0,0,0.6);
+z-index:999;
 }
 
 .team span{
 display:block;
-font-size:22px;
+font-size:24px;
 color:#ffd700;
 }
 
-/* BOARD */
 #board{
 display:grid;
 grid-template-columns:repeat(5,1fr);
-gap:10px;
-padding:110px 20px;
+gap:12px;
+padding:120px 20px;
 }
 
 .header{
-background:#00c6ff;
-padding:12px;
-border-radius:10px;
-font-weight:bold;
+background:linear-gradient(135deg,#0072ff,#00c6ff);
+padding:15px;
+border-radius:12px;
 }
 
 .cell{
-background:#1f4068;
+background:rgba(255,255,255,0.08);
+border-radius:12px;
 padding:30px;
-border-radius:10px;
-font-size:26px;
+font-size:22px;
 cursor:pointer;
 }
 
-/* MODAL */
 #questionView{
 position:fixed;
 top:0;
@@ -66,27 +63,22 @@ justify-content:center;
 align-items:center;
 }
 
-#qText{
-font-size:48px;
-margin:20px;
-font-weight:bold;
-}
-
-#timer{
-font-size:60px;
-color:#ffd700;
-}
+#qText{font-size:42px;margin:20px;}
+#timer{font-size:60px;color:#ffd700;}
 
 button{
-padding:10px 15px;
-margin:5px;
 border:none;
-border-radius:8px;
+border-radius:10px;
+padding:12px 20px;
+margin:6px;
 cursor:pointer;
+background:linear-gradient(135deg,#ff7e5f,#feb47b);
+color:white;
 }
 
-.correct{background:#00c853;}
-.wrong{background:#d50000;}
+.correct{background:linear-gradient(135deg,#00c853,#43e97b);}
+.wrong{background:linear-gradient(135deg,#d50000,#ff6a6a);}
+#teams button{background:#2a5298;}
 </style>
 </head>
 
@@ -103,11 +95,11 @@ cursor:pointer;
 <input id="betInput" type="number" style="display:none;">
 <button id="confirmBet" style="display:none;">Bekräfta</button>
 
-<button id="audioBtn" onclick="toggleAudio()" style="display:none;">Play / Pause</button>
-
+<button onclick="toggleAudio()">Play / Pause</button>
 <button onclick="showAnswer()">Visa svar</button>
 <button class="correct" onclick="correct()">RÄTT</button>
 <button class="wrong" onclick="wrong()">FEL</button>
+<button onclick="closeQ()">Stäng</button>
 </div>
 
 <audio id="song1" src="1.mp3"></audio>
@@ -118,18 +110,16 @@ cursor:pointer;
 
 <script>
 
-/* ELEMENT */
-const qText = document.getElementById("qText");
-const timer = document.getElementById("timer");
-const questionView = document.getElementById("questionView");
-const teamsDiv = document.getElementById("teams");
-const betInput = document.getElementById("betInput");
-const confirmBet = document.getElementById("confirmBet");
-const audioBtn = document.getElementById("audioBtn");
+let currentAudio=null;
+let currentCell=null;
+let currentKey,activeTeam,bet=0,time,int;
 
-/* SCORE FRÅN ALLA LEKAR */
-let data = JSON.parse(localStorage.getItem("games")) || {};
-let saved = [0,0,0];
+/* NYTT – håller poängen */
+let questionPoints = 0;
+
+/* POÄNG */
+let data=JSON.parse(localStorage.getItem("games"))||{};
+let saved=[0,0,0];
 
 Object.values(data).forEach(g=>{
 saved[0]+=g[0];
@@ -143,8 +133,7 @@ let teams=[
 {name:"Lag 3",points:saved[2]}
 ];
 
-/* SCORE */
-function renderScore(){
+function renderScoreboard(){
 let s=document.getElementById("scoreboard");
 s.innerHTML="";
 teams.forEach(t=>{
@@ -155,11 +144,52 @@ s.appendChild(d);
 });
 }
 
-/* CATEGORIES */
+function updateStorage(){
+localStorage.setItem("totalScores", JSON.stringify(teams.map(t=>t.points)));
+}
+
+/* LAGVAL */
+function renderTeams(bonus=false){
+let tDiv=document.getElementById("teams");
+tDiv.innerHTML="";
+
+teams.forEach(t=>{
+let b=document.createElement("button");
+b.innerText=bonus?`${t.name} (${t.points}p)`:t.name;
+
+b.onclick=()=>{
+activeTeam=t;
+if(bonus) document.getElementById("betInput").value=t.points;
+};
+
+tDiv.appendChild(b);
+});
+}
+
+/* BONUS */
+function setupBet(){
+renderTeams(true);
+betInput.style.display="block";
+confirmBet.style.display="block";
+}
+
+confirmBet.onclick=function(){
+bet=parseInt(betInput.value)||0;
+if(!activeTeam||!bet) return;
+
+let data=questions[currentKey];
+qText.innerHTML=data.q;
+
+betInput.style.display="none";
+confirmBet.style.display="none";
+
+startTimer(10);
+};
+
+/* DATA */
 let categories=["Svengelska","5e klass","Idiotfrågan","Mansgris","8 mars"];
 
-/* KLIPP IN DIN ORIGINAL LISTA HÄR */
-const questions = YOUR_QUESTIONS_HERE;
+const questions = { /* DIN ORIGINAL LISTA HÄR */ };
 
 /* BUILD */
 function build(){
@@ -178,48 +208,42 @@ let key=i+"-"+r;
 let d=document.createElement("div");
 d.className="cell";
 d.innerText=r;
-d.onclick=()=>openQ(key,d);
+d.onclick=()=>openQ(key,d,r); /* SKICKAR MED POÄNG */
 b.appendChild(d);
 });
 }
 }
 
-/* GLOBAL */
-let currentCell,currentKey,activeTeam,bet=0,points=0,currentAudio=null,int;
-
 /* OPEN */
-function openQ(key,cell){
+function openQ(key,cell,value){
 
 if(cell.classList.contains("used")) return;
 
 currentCell=cell;
 currentKey=key;
 
-/* HÄR SÄTTS POÄNG KORREKT */
-points = parseInt(key.split("-")[1]);
+/* SÄTT POÄNG */
+questionPoints = value;
 
 let data=questions[key];
 
 questionView.style.display="flex";
 
-/* TA BORT RUTA DIREKT */
+/* TA BORT FRÅGA DIREKT */
 cell.classList.add("used");
 cell.innerText="";
 cell.style.background="#000";
 
-/* RESET */
-audioBtn.style.display="none";
-
+/* AUDIO */
 if(currentAudio){
 currentAudio.pause();
 currentAudio.currentTime=0;
 }
 
-/* MUSIK */
 if(key.startsWith("0-") && data.audio){
-currentAudio=document.getElementById(data.audio);
-currentAudio.play();
-audioBtn.style.display="block";
+let audio=document.getElementById(data.audio);
+currentAudio=audio;
+audio.play();
 timer.innerHTML="";
 }else{
 startTimer(5);
@@ -227,49 +251,26 @@ startTimer(5);
 
 /* BONUS */
 if(data.bonus){
-qText.innerHTML="BONUS – satsa poäng";
+qText.innerHTML="Bonusfråga – satsa poäng!";
 setupBet();
 return;
 }
 
-/* NORMAL */
 qText.innerHTML=data.q;
 renderTeams();
 }
 
-/* TEAMS */
-function renderTeams(){
-teamsDiv.innerHTML="";
-teams.forEach(t=>{
-let b=document.createElement("button");
-b.innerText=t.name;
-b.onclick=()=>activeTeam=t;
-teamsDiv.appendChild(b);
-});
-}
-
-/* BONUS */
-function setupBet(){
-renderTeams();
-betInput.style.display="block";
-confirmBet.style.display="block";
-
-confirmBet.onclick=function(){
-bet=parseInt(betInput.value)||0;
-if(!activeTeam || bet<0 || bet>activeTeam.points) return;
-
-qText.innerHTML=questions[currentKey].q;
-betInput.style.display="none";
-confirmBet.style.display="none";
-startTimer(10);
-};
+/* AUDIO */
+function toggleAudio(){
+if(!currentAudio) return;
+currentAudio.paused?currentAudio.play():currentAudio.pause();
 }
 
 /* TIMER */
 function startTimer(t){
 clearInterval(int);
-let time=t;
-timer.innerText=time;
+time=t;
+timer.innerText=t;
 
 int=setInterval(()=>{
 time--;
@@ -278,62 +279,54 @@ if(time<=0) clearInterval(int);
 },1000);
 }
 
-/* AUDIO */
-function toggleAudio(){
-if(!currentAudio) return;
-currentAudio.paused ? currentAudio.play() : currentAudio.pause();
-}
-
 /* SVAR */
 function showAnswer(){
-qText.innerHTML += "<br><b>"+questions[currentKey].a+"</b>";
+qText.innerHTML+="<br><b>"+questions[currentKey].a+"</b>";
 }
 
 /* RESULT */
 function correct(){
 if(!activeTeam) return;
 
-if(questions[currentKey].bonus){
-activeTeam.points += bet;
-}else{
-activeTeam.points += points;
-}
+questions[currentKey].bonus
+? activeTeam.points+=bet
+: activeTeam.points+=questionPoints;
 
-finish();
+updateStorage();
+renderScoreboard();
+closeQ();
 }
 
 function wrong(){
 if(!activeTeam) return;
 
-if(questions[currentKey].bonus){
-activeTeam.points -= bet;
-}else{
-activeTeam.points -= points;
-}
+questions[currentKey].bonus
+? activeTeam.points-=bet
+: activeTeam.points-=questionPoints;
 
-finish();
+updateStorage();
+renderScoreboard();
+closeQ();
 }
 
 /* CLOSE */
-function finish(){
-
-renderScore();
+function closeQ(){
 questionView.style.display="none";
-
-activeTeam=null;
-bet=0;
-teamsDiv.innerHTML="";
-betInput.style.display="none";
-confirmBet.style.display="none";
 
 if(currentAudio){
 currentAudio.pause();
 currentAudio.currentTime=0;
 }
+
+activeTeam=null;
+bet=0;
+document.getElementById("teams").innerHTML="";
+betInput.style.display="none";
+confirmBet.style.display="none";
 }
 
 /* INIT */
-renderScore();
+renderScoreboard();
 build();
 
 </script>
