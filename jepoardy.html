@@ -8,7 +8,7 @@
 body{
 margin:0;
 font-family:Segoe UI;
-background:linear-gradient(135deg,#141e30,#243b55);
+background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
 color:white;
 text-align:center;
 }
@@ -47,14 +47,11 @@ font-weight:bold;
 
 .cell{
 background:#1f4068;
-border-radius:10px;
 padding:30px;
-font-size:24px;
+border-radius:10px;
+font-size:26px;
 cursor:pointer;
-transition:0.2s;
 }
-
-.cell:hover{transform:scale(1.05);}
 
 /* MODAL */
 #questionView{
@@ -71,8 +68,8 @@ align-items:center;
 
 #qText{
 font-size:48px;
-font-weight:bold;
 margin:20px;
+font-weight:bold;
 }
 
 #timer{
@@ -122,20 +119,17 @@ cursor:pointer;
 <script>
 
 /* ELEMENT */
-const qText=document.getElementById("qText");
-const timer=document.getElementById("timer");
-const questionView=document.getElementById("questionView");
-const teamsDiv=document.getElementById("teams");
-const betInput=document.getElementById("betInput");
-const confirmBet=document.getElementById("confirmBet");
-const audioBtn=document.getElementById("audioBtn");
+const qText = document.getElementById("qText");
+const timer = document.getElementById("timer");
+const questionView = document.getElementById("questionView");
+const teamsDiv = document.getElementById("teams");
+const betInput = document.getElementById("betInput");
+const confirmBet = document.getElementById("confirmBet");
+const audioBtn = document.getElementById("audioBtn");
 
-/* DATA */
-let currentAudio=null,currentCell=null,currentKey,activeTeam,bet=0,points=0,int;
-
-/* LOAD SCORE */
-let data=JSON.parse(localStorage.getItem("games"))||{};
-let saved=[0,0,0];
+/* SCORE FRÅN ALLA LEKAR */
+let data = JSON.parse(localStorage.getItem("games")) || {};
+let saved = [0,0,0];
 
 Object.values(data).forEach(g=>{
 saved[0]+=g[0];
@@ -164,8 +158,8 @@ s.appendChild(d);
 /* CATEGORIES */
 let categories=["Svengelska","5e klass","Idiotfrågan","Mansgris","8 mars"];
 
-/* QUESTIONS (ALLA KVAR) */
-const questions=YOUR_ORIGINAL_QUESTIONS_OBJECT_HERE;
+/* KLIPP IN DIN ORIGINAL LISTA HÄR */
+const questions = YOUR_QUESTIONS_HERE;
 
 /* BUILD */
 function build(){
@@ -184,24 +178,31 @@ let key=i+"-"+r;
 let d=document.createElement("div");
 d.className="cell";
 d.innerText=r;
-d.onclick=()=>openQ(key,d,r);
+d.onclick=()=>openQ(key,d);
 b.appendChild(d);
 });
 }
 }
 
+/* GLOBAL */
+let currentCell,currentKey,activeTeam,bet=0,points=0,currentAudio=null,int;
+
 /* OPEN */
-function openQ(key,cell,value){
+function openQ(key,cell){
 
 if(cell.classList.contains("used")) return;
 
 currentCell=cell;
 currentKey=key;
-points=value;
+
+/* HÄR SÄTTS POÄNG KORREKT */
+points = parseInt(key.split("-")[1]);
 
 let data=questions[key];
 
 questionView.style.display="flex";
+
+/* TA BORT RUTA DIREKT */
 cell.classList.add("used");
 cell.innerText="";
 cell.style.background="#000";
@@ -209,12 +210,12 @@ cell.style.background="#000";
 /* RESET */
 audioBtn.style.display="none";
 
-/* AUDIO */
 if(currentAudio){
 currentAudio.pause();
 currentAudio.currentTime=0;
 }
 
+/* MUSIK */
 if(key.startsWith("0-") && data.audio){
 currentAudio=document.getElementById(data.audio);
 currentAudio.play();
@@ -231,14 +232,9 @@ setupBet();
 return;
 }
 
+/* NORMAL */
 qText.innerHTML=data.q;
 renderTeams();
-}
-
-/* AUDIO */
-function toggleAudio(){
-if(!currentAudio) return;
-currentAudio.paused?currentAudio.play():currentAudio.pause();
 }
 
 /* TEAMS */
@@ -260,7 +256,7 @@ confirmBet.style.display="block";
 
 confirmBet.onclick=function(){
 bet=parseInt(betInput.value)||0;
-if(!activeTeam||bet<=0||bet>activeTeam.points) return;
+if(!activeTeam || bet<0 || bet>activeTeam.points) return;
 
 qText.innerHTML=questions[currentKey].q;
 betInput.style.display="none";
@@ -282,9 +278,15 @@ if(time<=0) clearInterval(int);
 },1000);
 }
 
-/* ANSWER */
+/* AUDIO */
+function toggleAudio(){
+if(!currentAudio) return;
+currentAudio.paused ? currentAudio.play() : currentAudio.pause();
+}
+
+/* SVAR */
 function showAnswer(){
-qText.innerHTML+="<br><b>"+questions[currentKey].a+"</b>";
+qText.innerHTML += "<br><b>"+questions[currentKey].a+"</b>";
 }
 
 /* RESULT */
@@ -292,9 +294,9 @@ function correct(){
 if(!activeTeam) return;
 
 if(questions[currentKey].bonus){
-activeTeam.points+=bet;
+activeTeam.points += bet;
 }else{
-activeTeam.points+=points;
+activeTeam.points += points;
 }
 
 finish();
@@ -304,9 +306,9 @@ function wrong(){
 if(!activeTeam) return;
 
 if(questions[currentKey].bonus){
-activeTeam.points-=bet;
+activeTeam.points -= bet;
 }else{
-activeTeam.points-=points;
+activeTeam.points -= points;
 }
 
 finish();
@@ -314,8 +316,8 @@ finish();
 
 /* CLOSE */
 function finish(){
-renderScore();
 
+renderScore();
 questionView.style.display="none";
 
 activeTeam=null;
