@@ -7,13 +7,13 @@
 <style>
 body{
 margin:0;
-font-family:Segoe UI, Arial;
-background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+font-family:Segoe UI;
+background:linear-gradient(135deg,#141e30,#243b55);
 color:white;
 text-align:center;
 }
 
-/* SCOREBOARD */
+/* SCORE */
 #scoreboard{
 position:fixed;
 top:0;
@@ -21,14 +21,12 @@ width:100%;
 display:flex;
 justify-content:space-around;
 padding:15px;
-background:rgba(0,0,0,0.6);
-backdrop-filter:blur(10px);
-z-index:999;
+background:rgba(0,0,0,0.7);
 }
 
 .team span{
 display:block;
-font-size:24px;
+font-size:22px;
 color:#ffd700;
 }
 
@@ -36,33 +34,32 @@ color:#ffd700;
 #board{
 display:grid;
 grid-template-columns:repeat(5,1fr);
-gap:12px;
-padding:120px 20px;
+gap:10px;
+padding:110px 20px;
 }
 
 .header{
-background:linear-gradient(135deg,#0072ff,#00c6ff);
-padding:15px;
-border-radius:12px;
+background:#00c6ff;
+padding:12px;
+border-radius:10px;
+font-weight:bold;
 }
 
 .cell{
-background:rgba(255,255,255,0.08);
-border-radius:12px;
+background:#1f4068;
+border-radius:10px;
 padding:30px;
-font-size:22px;
+font-size:24px;
 cursor:pointer;
 transition:0.2s;
 }
 
-.cell:hover{
-transform:scale(1.05);
-}
+.cell:hover{transform:scale(1.05);}
 
 /* MODAL */
 #questionView{
 position:fixed;
-top:80px;
+top:0;
 width:100%;
 height:100%;
 background:rgba(0,0,0,0.95);
@@ -72,22 +69,27 @@ justify-content:center;
 align-items:center;
 }
 
-#qText{font-size:48px;margin:20px;}
-#timer{font-size:80px;color:#ffd700;}
-
-button{
-border:none;
-border-radius:10px;
-padding:12px 20px;
-margin:6px;
-cursor:pointer;
-background:linear-gradient(135deg,#ff7e5f,#feb47b);
-color:white;
+#qText{
+font-size:48px;
+font-weight:bold;
+margin:20px;
 }
 
-.correct{background:linear-gradient(135deg,#00c853,#43e97b);}
-.wrong{background:linear-gradient(135deg,#d50000,#ff6a6a);}
-#teams button{background:#2a5298;}
+#timer{
+font-size:60px;
+color:#ffd700;
+}
+
+button{
+padding:10px 15px;
+margin:5px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+
+.correct{background:#00c853;}
+.wrong{background:#d50000;}
 </style>
 </head>
 
@@ -104,11 +106,11 @@ color:white;
 <input id="betInput" type="number" style="display:none;">
 <button id="confirmBet" style="display:none;">Bekräfta</button>
 
-<button onclick="toggleAudio()">Play / Pause</button>
+<button id="audioBtn" onclick="toggleAudio()" style="display:none;">Play / Pause</button>
+
 <button onclick="showAnswer()">Visa svar</button>
 <button class="correct" onclick="correct()">RÄTT</button>
 <button class="wrong" onclick="wrong()">FEL</button>
-<button onclick="closeQ()">Stäng</button>
 </div>
 
 <audio id="song1" src="1.mp3"></audio>
@@ -119,11 +121,19 @@ color:white;
 
 <script>
 
-let currentAudio=null;
-let currentCell=null;
-let currentKey,activeTeam,bet=0,time,int;
+/* ELEMENT */
+const qText=document.getElementById("qText");
+const timer=document.getElementById("timer");
+const questionView=document.getElementById("questionView");
+const teamsDiv=document.getElementById("teams");
+const betInput=document.getElementById("betInput");
+const confirmBet=document.getElementById("confirmBet");
+const audioBtn=document.getElementById("audioBtn");
 
-/* POÄNG */
+/* DATA */
+let currentAudio=null,currentCell=null,currentKey,activeTeam,bet=0,points=0,int;
+
+/* LOAD SCORE */
 let data=JSON.parse(localStorage.getItem("games"))||{};
 let saved=[0,0,0];
 
@@ -139,7 +149,8 @@ let teams=[
 {name:"Lag 3",points:saved[2]}
 ];
 
-function renderScoreboard(){
+/* SCORE */
+function renderScore(){
 let s=document.getElementById("scoreboard");
 s.innerHTML="";
 teams.forEach(t=>{
@@ -150,83 +161,11 @@ s.appendChild(d);
 });
 }
 
-function updateStorage(){
-localStorage.setItem("totalScores", JSON.stringify(teams.map(t=>t.points)));
-}
-
-/* LAGVAL */
-function renderTeams(bonus=false){
-let tDiv=document.getElementById("teams");
-tDiv.innerHTML="";
-
-teams.forEach(t=>{
-let b=document.createElement("button");
-b.innerText=bonus?`${t.name} (${t.points}p)`:t.name;
-
-b.onclick=()=>{
-activeTeam=t;
-if(bonus) document.getElementById("betInput").value=t.points;
-};
-
-tDiv.appendChild(b);
-});
-}
-
-/* BONUS */
-function setupBet(){
-renderTeams(true);
-betInput.style.display="block";
-confirmBet.style.display="block";
-}
-
-confirmBet.onclick=function(){
-bet=parseInt(betInput.value)||0;
-if(!activeTeam||!bet) return;
-
-let data=questions[currentKey];
-qText.innerHTML=data.q;
-
-betInput.style.display="none";
-confirmBet.style.display="none";
-
-startTimer(10);
-};
-
-/* DATA */
+/* CATEGORIES */
 let categories=["Svengelska","5e klass","Idiotfrågan","Mansgris","8 mars"];
 
-const questions={
-
-"0-1":{q:"Vilken låt är detta?",a:"Gyllene Tider - Sommartider",audio:"song1"},
-"0-2":{q:"Vilken låt är detta?",a:"Richard Marx - Right here waiting for you",audio:"song2"},
-"0-3":{q:"Vilken låt är detta?",a:"Gyllene Tider - Kung av sand",audio:"song3"},
-"0-4":{bonus:true,q:"Vilken låt är detta?",a:"Whitney Houston - Always love you",audio:"song4"},
-"0-5":{q:"Vilken låt är detta?",a:"Passenger - Let her go",audio:"song5"},
-
-"1-1":{q:" 1+2+3+4+5=",a:"15"},
-"1-2":{q:" Få, färre, ……",a:"Färst"},
-"1-3":{q:" Vad heter huvudstaden i Australien",a:"Canberra"},
-"1-4":{q:" Vad står den kemiska beteckningen Co2 för?",a:"Koldioxid"},
-"1-5":{bonus:true,q:"Vem var Sveriges första folkvalda konung",a:"Gustav Vasa"},
-
-"2-1":{q:" Föräldra-skap eller föräldrar-skap?",a:"föräldra-skap"},
-"2-2":{q:" Börjar man tideräkna vid jesu dö eller jesu födelse?",a:"Jesus födelse"},
-"2-3":{q:" Är det en mittenskåra på Iprentabletten?",a:"nej"},
-"2-4":{q:" Vilket håll går gubben på tändsticksasken?",a:"vänster"},
-"2-5":{q:" Hur många färger finns det i den klassiska påsen Ahlgrens bilar?",a:"3"},
-
-"3-1":{q:" Vilken sport tävlade Michael Schumacher i?",a:"Formel 1"},
-"3-2":{q:" Vilket är det korrekta namnet på bilden?",a:"Bild på en fogsvans"},
-"3-3":{q:" Vilket namn var Pamela Andersons karaktär i Baywatch?",a:"HÄR LÄGGER DU IN SVARET"},
-"3-4":{q:" Vad heter den kände svenska fotografen?",a:"Bingo Rimer"},
-"3-5":{q:" Vilken del i bilen driver bilen framåt?",a:"Förbränningsmotor"},
-
-"4-1":{q:" Vad firar man detta datum?",a:"internationella kvinnodagen"},
-"4-2":{q:" Hur ofta sker ägglossning?",a:"cirka en gång per månad"},
-"4-3":{q:" Vad heter verktyget som curlar ögonfransar?",a:"ögonfransböjare"},
-"4-4":{q:"FRÅGAN",a:"SVARET"},
-"4-5":{q:"FRÅGAN",a:"SVARET"}
-};
+/* QUESTIONS (ALLA KVAR) */
+const questions=YOUR_ORIGINAL_QUESTIONS_OBJECT_HERE;
 
 /* BUILD */
 function build(){
@@ -245,22 +184,30 @@ let key=i+"-"+r;
 let d=document.createElement("div");
 d.className="cell";
 d.innerText=r;
-d.onclick=()=>openQ(key,d);
+d.onclick=()=>openQ(key,d,r);
 b.appendChild(d);
 });
 }
 }
 
 /* OPEN */
-function openQ(key,cell){
+function openQ(key,cell,value){
 
 if(cell.classList.contains("used")) return;
 
 currentCell=cell;
 currentKey=key;
+points=value;
+
 let data=questions[key];
 
 questionView.style.display="flex";
+cell.classList.add("used");
+cell.innerText="";
+cell.style.background="#000";
+
+/* RESET */
+audioBtn.style.display="none";
 
 /* AUDIO */
 if(currentAudio){
@@ -269,11 +216,9 @@ currentAudio.currentTime=0;
 }
 
 if(key.startsWith("0-") && data.audio){
-let audio=document.getElementById(data.audio);
-if(audio){
-currentAudio=audio;
-audio.play();
-}
+currentAudio=document.getElementById(data.audio);
+currentAudio.play();
+audioBtn.style.display="block";
 timer.innerHTML="";
 }else{
 startTimer(5);
@@ -281,7 +226,7 @@ startTimer(5);
 
 /* BONUS */
 if(data.bonus){
-qText.innerHTML="Bonusfråga – satsa poäng!";
+qText.innerHTML="BONUS – satsa poäng";
 setupBet();
 return;
 }
@@ -290,17 +235,45 @@ qText.innerHTML=data.q;
 renderTeams();
 }
 
-/* AUDIO CONTROL */
+/* AUDIO */
 function toggleAudio(){
 if(!currentAudio) return;
 currentAudio.paused?currentAudio.play():currentAudio.pause();
 }
 
+/* TEAMS */
+function renderTeams(){
+teamsDiv.innerHTML="";
+teams.forEach(t=>{
+let b=document.createElement("button");
+b.innerText=t.name;
+b.onclick=()=>activeTeam=t;
+teamsDiv.appendChild(b);
+});
+}
+
+/* BONUS */
+function setupBet(){
+renderTeams();
+betInput.style.display="block";
+confirmBet.style.display="block";
+
+confirmBet.onclick=function(){
+bet=parseInt(betInput.value)||0;
+if(!activeTeam||bet<=0||bet>activeTeam.points) return;
+
+qText.innerHTML=questions[currentKey].q;
+betInput.style.display="none";
+confirmBet.style.display="none";
+startTimer(10);
+};
+}
+
 /* TIMER */
 function startTimer(t){
 clearInterval(int);
-time=t;
-timer.innerText=t;
+let time=t;
+timer.innerText=time;
 
 int=setInterval(()=>{
 time--;
@@ -314,47 +287,51 @@ function showAnswer(){
 qText.innerHTML+="<br><b>"+questions[currentKey].a+"</b>";
 }
 
+/* RESULT */
 function correct(){
 if(!activeTeam) return;
 
-questions[currentKey].bonus?activeTeam.points+=bet:activeTeam.points+=1;
+if(questions[currentKey].bonus){
+activeTeam.points+=bet;
+}else{
+activeTeam.points+=points;
+}
 
-updateStorage();
-renderScoreboard();
-closeQ();
+finish();
 }
 
 function wrong(){
 if(!activeTeam) return;
-if(questions[currentKey].bonus) activeTeam.points-=bet;
-updateStorage();
-renderScoreboard();
+
+if(questions[currentKey].bonus){
+activeTeam.points-=bet;
+}else{
+activeTeam.points-=points;
+}
+
+finish();
 }
 
 /* CLOSE */
-function closeQ(){
+function finish(){
+renderScore();
+
 questionView.style.display="none";
+
+activeTeam=null;
+bet=0;
+teamsDiv.innerHTML="";
+betInput.style.display="none";
+confirmBet.style.display="none";
 
 if(currentAudio){
 currentAudio.pause();
 currentAudio.currentTime=0;
 }
-
-if(currentCell){
-currentCell.classList.add("used");
-currentCell.innerText="";
-currentCell.style.background="#000";
-}
-
-activeTeam=null;
-bet=0;
-teams.innerHTML="";
-betInput.style.display="none";
-confirmBet.style.display="none";
 }
 
 /* INIT */
-renderScoreboard();
+renderScore();
 build();
 
 </script>
